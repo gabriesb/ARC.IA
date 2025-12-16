@@ -32,7 +32,15 @@ jobs:
       - name: Read ECR repository URI from Terraform
         working-directory: infra
         run: |
-          echo "ECR_URI=$(terraform output -raw ecr_repository_uri)" >> $GITHUB_ENV
+            if terraform output -json | jq -e '.ecr_repository_uri' > /dev/null; then
+            ECR_URI=$(terraform output -raw ecr_repository_uri)
+            echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
+            echo "ECR repository URI detected: $ECR_URI"
+            else
+            echo "ERROR: Terraform output 'ecr_repository_uri' not found."
+            echo "Run Terraform Apply before running the build pipeline."
+            exit 1
+            fi
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
