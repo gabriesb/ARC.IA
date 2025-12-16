@@ -1,0 +1,116 @@
+name: AgentCore Full Deploy (Manual Orchestrated)
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  TF_IN_AUTOMATION: true
+  IMAGE_TAG: latest
+
+jobs:
+
+  terraform-infra:
+    name: Terraform – Infra Base (ECR + IAM)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform Apply (infra base)
+        working-directory: infra
+        run: terraform apply -auto-approve
+
+  build-and-push:
+    name: Build & Push Docker Image (ARM64)
+    needs: terraform-infra
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Read ECR Repository URI from Terraform
+        working-directory: infra
+        run: |
+          ECR_URI=$(terraform output -raw ecr_repository_uri)
+          echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
+          echo "Using ECR repository: $ECR_URI"
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push ARM64 Image
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            -t $ECR_URI:$IMAGE_TAG \
+            --push .
+
+  terraform-runtime:
+    name: Terraform – AgentCore Runtime
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_enable_runtime: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform Apply (AgentCore Runtime)
+        working-directory: infra
+        run: terraform apply -auto-approve
