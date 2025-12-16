@@ -1,22 +1,15 @@
-name: AgentCore Runtime – Build & Push (ARM64)
+name: Build & Push AgentCore Runtime (ARM64)
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REPOSITORY_NAME: ${{ secrets.ECR_REPOSITORY_NAME }}
   IMAGE_TAG: latest
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
 
     steps:
       - name: Checkout repository
@@ -29,15 +22,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Read ECR repository URI from Terraform
+        working-directory: infra
+        run: |
+          echo "ECR_URI=$(terraform output -raw ecr_repository_uri)" >> $GITHUB_ENV
+
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push ARM64 image to ECR
+      - name: Build and push ARM64 image
         run: |
           docker buildx build \
             --platform linux/arm64 \
-            -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME:$IMAGE_TAG \
+            -t $ECR_URI:$IMAGE_TAG \
             --push .

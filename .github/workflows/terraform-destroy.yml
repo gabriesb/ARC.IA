@@ -1,4 +1,4 @@
-name: Terraform – DESTROY AgentCore Environment
+name: Terraform Destroy – AgentCore Environment
 
 on:
   workflow_dispatch:
@@ -6,7 +6,6 @@ on:
       confirm_destroy:
         description: "Type DESTROY to confirm environment destruction"
         required: true
-        default: "NO"
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -16,14 +15,11 @@ jobs:
   destroy:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
       - name: Abort if not confirmed
         if: ${{ github.event.inputs.confirm_destroy != 'DESTROY' }}
         run: |
-          echo "Destruction not confirmed. Type DESTROY to proceed."
+          echo "Destruction not confirmed. Aborting."
           exit 1
 
       - name: Checkout repository
@@ -44,6 +40,26 @@ jobs:
       - name: Terraform Init
         working-directory: infra
         run: terraform init
+
+      - name: Get ECR repository name from Terraform
+        working-directory: infra
+        run: |
+          echo "ECR_REPO_NAME=$(terraform output -raw ecr_repository_name)" >> $GITHUB_ENV
+
+      - name: Delete all images from ECR repository
+        run: |
+          IMAGES=$(aws ecr list-images \
+            --repository-name $ECR_REPO_NAME \
+            --query 'imageIds[*]' \
+            --output json)
+
+          if [ "$IMAGES" != "[]" ]; then
+            aws ecr batch-delete-image \
+              --repository-name $ECR_REPO_NAME \
+              --image-ids "$IMAGES"
+          else
+            echo "No images found in ECR repository."
+          fi
 
       - name: Terraform Destroy
         working-directory: infra
