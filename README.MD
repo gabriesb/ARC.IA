@@ -1,191 +1,185 @@
-GeoPro AgentCore
+# GeoPro AgentCore
 
-Agente de Inteligência Artificial Especializado em Geografia com AWS Bedrock AgentCore
+Agente de Inteligência Artificial especializado em **Geografia**, executado nativamente no **AWS Bedrock AgentCore Runtime**, com infraestrutura provisionada via **Terraform (AWS Cloud Control – awscc)** e pipelines **CI/CD manuais**.
 
-Visão Geral
+Este projeto demonstra uma arquitetura moderna de **GenAI + DevOps**, com foco em controle total do ambiente, reprodutibilidade, segurança e boas práticas de produção.
 
-GeoPro AgentCore é um agente de Inteligência Artificial especializado em Geografia, desenvolvido para rodar nativamente no AWS Bedrock AgentCore Runtime. O projeto combina Infraestrutura como Código (Terraform), runtimes containerizados de IA e pipelines CI/CD para oferecer uma solução escalável e pronta para produção.
+---
 
-O agente é projetado para fornecer respostas precisas, estruturadas e educacionais em múltiplos domínios da Geografia, seguindo rigorosos limites de comportamento e domínio.
+## Visão Geral
 
-Objetivos Principais
+O **GeoPro AgentCore** é um agente de IA projetado para responder perguntas complexas de Geografia de forma **precisa, estruturada e didática**, respeitando limites claros de domínio e evitando respostas genéricas ou fora de escopo.
 
-Implantar um agente de IA totalmente gerenciado pelo AWS Bedrock AgentCore
+O runtime do agente é containerizado e executado diretamente no **AgentCore**, sem dependência de front-end, APIs externas ou serviços intermediários.
 
-Garantir builds de container ARM64 (requisito do AgentCore)
+---
 
-Usar Terraform (AWS Cloud Control – awscc provider) para gerenciar a infraestrutura
+## Objetivos do Projeto
 
-Separar as pipelines de build das pipelines de infraestrutura
+- Executar um agente de IA diretamente no **AWS Bedrock AgentCore**
+- Utilizar **containers ARM64**, compatíveis com a infraestrutura do AgentCore
+- Provisionar toda a infraestrutura com **Terraform (awscc provider)**
+- Separar claramente:
+  - build de imagem
+  - provisionamento de infraestrutura
+  - destruição do ambiente
+- Garantir **execução manual** das pipelines, evitando custos e alterações acidentais
 
-Seguir as melhores práticas DevOps em produção
+---
 
-Capacidades do Agente
-Geografia Física
+## Capacidades do Agente
 
-Tipos climáticos e fatores climáticos
+### Geografia Física
+- Tipos climáticos e fatores climáticos
+- Relevo, formas de terreno e processos de formação
+- Biomas e ecossistemas
+- Oceanos, rios e ciclo hidrológico
+- Tectônica de placas, terremotos e vulcanismo
 
-Formações de relevo e seus processos de formação
+### Geografia Humana
+- Distribuição populacional e densidade demográfica
+- Urbanização, megacidades e impactos urbanos
+- Geopolítica e fronteiras internacionais
+- Migração e dinâmica territorial
 
-Biomas e ecossistemas
+### Geografia Econômica
+- Recursos naturais e sua distribuição
+- Produção agrícola, industrial e extrativa
+- Logística, infraestrutura e cadeias de suprimento
+- Rotas comerciais históricas e atuais
 
-Oceanos, rios e ciclos hidrológicos
+### Geografia Ambiental
+- Mudanças climáticas e seus impactos
+- Sustentabilidade e desenvolvimento sustentável
+- Conservação ambiental e serviços ecossistêmicos
 
-Tectônica de placas, terremotos e vulcanismo
+### Cartografia
+- Latitude e longitude
+- Coordenadas geográficas
+- Fusos horários e Linha Internacional de Data
 
-Geografia Humana
+---
 
-Distribuição da população, densidade e tendências demográficas
+## Arquitetura
 
-Urbanização, megacidades e o impacto do crescimento urbano
-
-Geopolítica, fronteiras políticas e disputas territoriais
-
-Fronteiras e seu impacto econômico e social
-
-Geografia Econômica
-
-Recursos naturais e sua distribuição
-
-Produção agrícola e industrial
-
-Logística, redes de transporte e cadeias de suprimento
-
-Rotas comerciais históricas e contemporâneas
-
-Geografia Ambiental
-
-Mudanças climáticas: causas, consequências, mitigação e adaptação
-
-Sustentabilidade e práticas de desenvolvimento sustentável
-
-Serviços ecossistêmicos e conservação da biodiversidade
-
-Fundamentos de Cartografia
-
-Latitude, longitude e posicionamento geográfico
-
-Fusos horários e a Linha Internacional de Data
-
-Arquitetura do Projeto
-Repositório GitHub
+GitHub Repository
 │
 ├── Docker (ARM64)
-│   └── Container do Agent Runtime
+│ └── Container do agente
 │
-├── AWS ECR
-│   └── Armazena as imagens do runtime
+├── Amazon ECR
+│ └── Armazenamento das imagens
 │
 ├── AWS Bedrock AgentCore
-│   └── Executa o agente de IA
+│ └── Execução do runtime de IA
 │
-└── Terraform (awscc provider)
-    └── Gerencia toda a infraestrutura
+└── Terraform (awscc)
+└── Provisionamento da infraestrutura
 
-Estrutura do Projeto
+yaml
+Copiar código
+
+---
+
+## Estrutura do Repositório
+
 .
-├── agent.py                    # Lógica do agente de Geografia
-├── Dockerfile                  # Container compatível com ARM64
-├── requirements.txt            # Dependências do runtime
+├── agent.py # Lógica do agente de Geografia
+├── Dockerfile # Runtime container (ARM64)
+├── requirements.txt # Dependências Python
 ├── infra/
-│   ├── main.tf                 # AgentCore runtime & IAM
-│   ├── providers.tf            # Provedores AWS (awscc)
-│   ├── versions.tf             # Restrições de versão do Terraform
-│   ├── variables.tf            # Variáveis de entrada
-│   └── outputs.tf              # Outputs do runtime & ECR
+│ ├── main.tf # Recursos principais (ECR, IAM, AgentCore)
+│ ├── variables.tf # Variáveis do Terraform
+│ ├── outputs.tf # Outputs (ECR, Runtime)
+│ ├── providers.tf # Providers AWS / awscc
+│ └── versions.tf # Versões do Terraform
 └── .github/
-    └── workflows/
-        ├── agentcore-runtime.yml      # Build & push da imagem ARM64
-        ├── terraform-setup.yml        # Aplicação do Terraform (ambiente)
-        └── terraform-destroy.yml      # Destruição segura do ambiente
+└── workflows/
+├── agentcore-runtime.yml # Build & Push da imagem (manual)
+├── terraform-setup.yml # Terraform Apply (manual)
+└── terraform-destroy.yml # Terraform Destroy (manual + seguro)
 
-Pipelines CI/CD
-1. Build & Push do Runtime (ARM64)
+yaml
+Copiar código
 
-Utiliza Docker Buildx
+---
 
-Constrói a imagem para linux/arm64
+## Pipelines CI/CD
 
-Realiza o push diretamente para Amazon ECR
+Todas as pipelines são **manuais**, acionadas apenas via `workflow_dispatch`.
 
-Gatilho manual ou acionado pela branch main
+### Build & Push do Runtime
+- Build da imagem Docker usando **Docker Buildx**
+- Arquitetura: `linux/arm64`
+- Push direto para o Amazon ECR
 
-2. Setup do Ambiente com Terraform
+### Terraform Apply
+- Inicializa e valida o Terraform
+- Cria ou atualiza:
+  - Repositório ECR
+  - IAM Roles e Policies
+  - AgentCore Runtime
 
-Executa terraform init / plan / apply
+### Terraform Destroy
+- Execução manual com confirmação explícita
+- Limpa imagens do ECR antes do destroy
+- Remove toda a infraestrutura provisionada
 
-Cria ou atualiza:
+---
 
-Repositório ECR
+## Requisitos
 
-Roles e policies IAM
+- Conta AWS com **Bedrock AgentCore habilitado**
+- Docker com **Buildx**
+- Terraform `>= 1.6`
+- GitHub Actions
+- Permissões AWS para:
+  - ECR
+  - IAM
+  - Bedrock AgentCore
+  - Cloud Control API
 
-Runtime do Bedrock AgentCore
+---
 
-Gatilho em alterações no diretório infra/
+## Segurança e Boas Práticas
 
-3. Destruição do Ambiente (Manual & Segura)
+- Terraform state não é versionado
+- `.terraform.lock.hcl` versionado para reprodutibilidade
+- Secrets armazenados apenas no GitHub Actions
+- Execução manual de pipelines para controle de custos
+- Infraestrutura declarativa e idempotente
+- Separação clara entre código, build e infraestrutura
 
-Gatilho manual
+---
 
-Requer confirmação explícita (DESTROY)
+## Exemplo de Uso
 
-Destrói totalmente o ambiente
+Payload de invocação do runtime:
 
-Requisitos
-
-Docker com Buildx habilitado
-
-Conta AWS com Bedrock AgentCore habilitado
-
-Terraform >= 1.6
-
-GitHub Actions (para CI/CD)
-
-Segurança e Melhores Práticas
-
-Nenhum arquivo de estado do Terraform é versionado no Git
-
-O arquivo .terraform.lock.hcl é versionado para garantir reprodutibilidade
-
-Secrets armazenados de forma segura no GitHub Actions
-
-Forçamos ARM64 para compatibilidade com o AgentCore
-
-Pipelines de infraestrutura e build completamente desacopladas
-
-Exemplo de Invocação do Runtime
+```json
 {
-  "prompt": "Explique por que os desertos estão comumente localizados próximos aos 30 graus de latitude."
+  "prompt": "Explique por que os desertos se concentram próximos aos 30 graus de latitude."
 }
+O agente retorna uma resposta estruturada, objetiva e específica do domínio geográfico.
 
+Possíveis Evoluções
+Exposição via AgentCore Gateway (API REST)
 
-O agente responde com explicações estruturadas, factuais e específicas do domínio, sem dados inventados.
+Suporte a múltiplos ambientes (dev / prod)
 
-Melhorias Futuras
+OIDC para CI/CD (remoção de chaves estáticas)
 
-Gateway do AgentCore (exposição de API REST)
+Ferramentas geográficas adicionais (clima, coordenadas, fusos)
 
-Suporte multi-ambiente (dev / prod)
-
-OIDC para CI/CD (sem chaves AWS estáticas)
-
-Ferramentas geográficas (coordenadas, dados climáticos, fusos horários)
-
-Painéis de observabilidade e métricas
+Monitoramento e métricas avançadas
 
 Autor
-
-Desenvolvido como um projeto de portfólio DevOps + Generative AI, demonstrando:
+Projeto desenvolvido como portfólio técnico em DevOps e Generative AI, com foco em:
 
 Infraestrutura como Código
 
-Runtimes de IA nativos na nuvem
+Arquiteturas cloud-native
 
-Pipelines CI/CD seguras e escaláveis
+GenAI em produção
 
-Decisões de design voltadas para produção
-
-Licença
-
-Este projeto é fornecido para fins educacionais e demonstração profissional.
+Pipelines CI/CD seguras e controladas
