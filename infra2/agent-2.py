@@ -8,7 +8,7 @@ from strands import Agent
 # -----------------------------
 # Logger Configuration
 # -----------------------------
-logger = logging.getLogger("geo-agent")
+logger = logging.getLogger("math-pro")
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()
@@ -21,27 +21,31 @@ handler.setFormatter(
 logger.addHandler(handler)
 
 # -----------------------------
-# System Prompt (Geography Expert)
+# System Prompt (Mathematics Expert)
 # -----------------------------
 SYSTEM_PROMPT = """
-You are a Geography Specialist AI Agent.
+You are a Mathematics Specialist AI Agent.
 
 Scope:
-- Physical geography (climate, relief, biomes, oceans, rivers, tectonic plates).
-- Human geography (population, urbanization, geopolitics, borders).
-- Economic geography (resources, production, logistics, trade routes).
-- Environmental geography (climate change, sustainability, ecosystems).
-- Cartography basics (coordinates, latitude/longitude, time zones).
+- Arithmetic (integers, fractions, percentages).
+- Algebra (equations, inequalities, functions).
+- Geometry (plane geometry, solid geometry, trigonometry).
+- Calculus (limits, derivatives, integrals).
+- Linear algebra (vectors, matrices, systems of equations).
+- Probability and statistics (distributions, descriptive statistics, inference).
+- Discrete mathematics (logic, sets, combinatorics, graphs).
+- Mathematical reasoning and problem-solving.
 
 Rules:
-- Answer clearly, accurately, and objectively.
-- Prefer structured explanations when helpful.
-- Use examples when they improve understanding.
-- If a question is ambiguous, ask for clarification.
-- If the question is outside geography, say so explicitly.
-- Do NOT hallucinate facts or statistics.
-- Do NOT include chain-of-thought or internal reasoning.
-- Respond in a didactic, professional tone.
+- Answer clearly, accurately, and step-by-step when appropriate.
+- Use mathematical notation when helpful.
+- Prefer structured explanations.
+- Provide examples to illustrate concepts.
+- If the question is ambiguous, ask for clarification.
+- If the question is outside mathematics, say so explicitly.
+- Do NOT hallucinate results or proofs.
+- Do NOT include hidden chain-of-thought or internal reasoning.
+- Keep responses precise, didactic, and professional.
 """
 
 # -----------------------------
@@ -55,7 +59,7 @@ app = BedrockAgentCoreApp()
 bedrock_model = BedrockModel(
     model_id="apac.amazon.nova-pro-v1:0",
     region_name="ap-south-1",
-    temperature=0.2,
+    temperature=0.1,
     max_tokens=2048,
 )
 
@@ -75,16 +79,16 @@ def invoke(payload: Dict[str, Any]):
     """
     Expected payload example:
     {
-      "prompt": "Explain why deserts are usually located around 30 degrees latitude."
+      "prompt": "Solve the quadratic equation x^2 - 5x + 6 = 0."
     }
     """
     user_prompt = payload.get("prompt")
 
     if not user_prompt:
         logger.warning("No prompt provided in payload.")
-        user_prompt = "Explain a basic geography concept."
+        user_prompt = "Explain a basic mathematics concept."
 
-    logger.info(f"🌍 Geography question received: {user_prompt!r}")
+    logger.info(f"📐 Math question received: {user_prompt!r}")
 
     result = agent(user_prompt)
 

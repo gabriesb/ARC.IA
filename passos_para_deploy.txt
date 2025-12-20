@@ -1,0 +1,82 @@
+1️⃣ Build da imagem Docker (ARM64 – obrigatório)
+
+O AgentCore exige ARM64.
+
+Na raiz do projeto (onde está o Dockerfile):
+
+docker buildx build `
+  --platform linux/arm64 `
+  -t geo-agent:latest `
+  --load `
+  .
+
+  docker buildx build `
+  --platform linux/arm64 `
+  -t math-pro:latest `
+  --load `
+  .
+
+
+Se quiser validar:
+
+docker images
+
+2️⃣ Criar repositório ECR (se ainda não existir)
+
+Você pode criar via Terraform ou CLI.
+
+Via AWS CLI (direto):
+aws ecr create-repository `
+  --repository-name bedrock/agent-runtime-geo `
+  --region us-west-2
+
+
+aws ecr create-repository `
+  --repository-name bedrock/agent-runtime-math `
+  --region us-west-2
+
+Guarde o repository Uri.
+
+3️⃣ Login no ECR
+aws ecr get-login-password --region us-west-2 |
+docker login --username AWS --password-stdin 841162693674.dkr.ecr.us-west-2.amazonaws.com
+
+ou em caso de erro;
+
+$PASS = aws ecr get-login-password --region us-west-2
+>> docker login --username AWS --password $PASS 841162693674.dkr.ecr.us-west-2.amazonaws.com
+
+
+(Substitua pelo seu Account ID)
+
+4️⃣ Tag da imagem local para o ECR
+docker tag geo-agent:latest 841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-geo:latest
+
+docker tag geo-agent:latest 841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-math:latest
+
+5️⃣ Push da imagem para o ECR
+docker push 841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-geo:latest
+
+docker push 841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-math:latest
+
+Confirme no console:
+
+ECR → Repositórios → bedrock/agent-runtime-geo
+
+6️⃣ Terraform Init
+
+Entre na pasta de infra:
+
+cd infra
+terraform init
+
+7️⃣ Terraform Plan (opcional, mas recomendado)
+terraform plan
+
+8️⃣ Terraform Apply (CRIA O RUNTIME)
+terraform apply -auto-approve
+
+
+Se tudo estiver correto, o recurso criado será:
+
+awscc_bedrockagentcore_runtime.runtime

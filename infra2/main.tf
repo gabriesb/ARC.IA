@@ -3,23 +3,17 @@ resource "random_id" "suffix" {
 }
 
 locals {
-  suffix      = random_id.suffix.hex
-  runtime_name = "${var.project_name}-${local.suffix}"
+  suffix       = random_id.suffix.hex
+  runtime_name = "agentcore_math_pro_${local.suffix}"
   role_name    = "bedrock-agent-runtime-role-${local.suffix}"
-  ecr_name     = "841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-geo:latest"
+
+  # Imagem do math-pro (ajuste se usar outro repo/tag)
+  ecr_image = "841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-math:latest"
 }
 
-#resource "awscc_ecr_repository" "agent_runtime" {
-  #repository_name = "bedrock/agent-runtime-geo"
-
-  #tags = [{
-    #key   = "Project"
-    #value = var.project_name
-  #}]
-#}
-
-
+# =========================================================
 # IAM Role (assumida pelo AgentCore Runtime)
+# =========================================================
 resource "awscc_iam_role" "agent_runtime_role" {
   role_name = local.role_name
 
@@ -40,10 +34,9 @@ resource "awscc_iam_role" "agent_runtime_role" {
   }]
 }
 
-# Policy do runtime:
-# - InvokeModel (pra chamar o Bedrock)
-# - Logs (CloudWatch)
-# - ECR pull (runtime puxar a imagem)
+# =========================================================
+# Policy do runtime
+# =========================================================
 resource "awscc_iam_role_policy" "agent_runtime_policy" {
   role_name   = awscc_iam_role.agent_runtime_role.role_name
   policy_name = "bedrock-agent-runtime-policy"
@@ -87,16 +80,17 @@ resource "awscc_iam_role_policy" "agent_runtime_policy" {
   })
 }
 
-
-# AgentCore Runtime (container)
-resource "awscc_bedrockagentcore_runtime" "runtime" {
-  agent_runtime_name = "agentcore_geopro_tutor_${random_id.suffix.hex}"
-  description        = "Agent Core Runtime for GeoPro Tutor"
+# =========================================================
+# AgentCore Runtime — math-pro
+# =========================================================
+resource "awscc_bedrockagentcore_runtime" "math_pro" {
+  agent_runtime_name = "agentcore_math_pro_${random_id.suffix.hex}"
+  description        = "Agent Core Runtime for Math-Pro (Mathematics Specialist)"
   role_arn           = awscc_iam_role.agent_runtime_role.arn
 
   agent_runtime_artifact = {
     container_configuration = {
-      container_uri = "841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-geo:latest"      
+      container_uri = "841162693674.dkr.ecr.us-west-2.amazonaws.com/bedrock/agent-runtime-math:latest"
     }
   }
 
@@ -108,21 +102,11 @@ resource "awscc_bedrockagentcore_runtime" "runtime" {
     LOG_LEVEL = "INFO"
   }
 
-    tags = {
-    Runtime    = "geopro-tutor"
+  tags = {
+    Runtime    = "math-pro"
     CostCenter = "agentcore"
-    Project    = "geopro"
+    Project    = "agents"
+    Domain     = "mathematics"
     Env        = "dev"
   }
-
 }
-
-#resource "awscc_bedrockagentcore_gateway" "agent" {
-#  gateway_name = "agentcore_gateway_${random_id.suffix.hex}"
-#  description  = "Gateway for Agent Core Runtime"
-#  role_arn     = awscc_iam_role.agent_runtime_role.arn
-#
-#  network_configuration = {
-#    network_mode = "PUBLIC"
-#  }
-#}
