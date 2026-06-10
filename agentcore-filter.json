@@ -1,9 +1,0 @@
-{
-  "Dimensions": {
-    "Key": "SERVICE",
-    "Values": [
-      "Amazon Bedrock AgentCore",
-      "Bedrock AgentCore"
-    ]
-  }
-}
