@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-      bucket = "agent-state"
+      bucket = "agent-runtime-state"
       key    = "terraform.tfstate"
       region = "us-east-1"
     }
