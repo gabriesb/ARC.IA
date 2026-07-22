@@ -9,3 +9,9 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "build_branch" {
+  description = "Branch do GitHub que o CodeBuild vai clonar para buildar a imagem."
+  type        = string
+  default     = "devops_agent"
+}

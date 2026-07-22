@@ -1,9 +1,9 @@
-#output "ecr_repository_name" {
-  #description = "Nome do repositório ECR usado pelo runtime"
-  #value       = awscc_ecr_repository.agent_runtime.repository_name
-#}
+output "ecr_repository_uri" {
+  description = "URI do repositório ECR (imagem buildada pelo CodeBuild)"
+  value       = aws_ecr_repository.agent_ecr.repository_url
+}
 
-#output "ecr_repository_uri" {
-  #description = "URI do repositório ECR (para build e push da imagem)"
-  #value       = awscc_ecr_repository.agent_runtime.repository_uri
-#}
+output "codebuild_project_name" {
+  description = "Nome do projeto CodeBuild para buildar e publicar a imagem"
+  value       = aws_codebuild_project.agent_build.name
+}
