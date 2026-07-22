@@ -18,7 +18,7 @@ handler.setFormatter(
         "%Y-%m-%d %H:%M:%S"
     )
 )
-logger.addHandler(handler)
+logger.addHandler(handler) #forçar apply
 
 # -----------------------------
 # System Prompt (Geography Expert)
