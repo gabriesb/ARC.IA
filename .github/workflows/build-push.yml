@@ -1,0 +1,42 @@
+name: Build & Push to ECR
+
+on:
+  push:
+    branches: ["main"]        # ajuste para a branch desejada (var.build_branch)
+    paths:
+      - "src/**"              # só dispara quando o código do agent mudar
+  workflow_dispatch:          # permite disparar manualmente pelo GitHub
+
+permissions:
+  id-token: write             # necessário para OIDC
+  contents: read
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}   # valor: terraform output github_actions_role_arn
+          aws-region: us-east-1
+
+      - name: Login no ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build e push da imagem ARM64
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: agent_ecr
+        run: |
+          docker build \
+            --platform linux/arm64 \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            src/
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Imagem publicada: $ECR_REGISTRY/$ECR_REPOSITORY:latest"

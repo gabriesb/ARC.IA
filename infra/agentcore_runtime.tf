@@ -1,11 +1,12 @@
 resource "awscc_bedrockagentcore_runtime" "agent_runtime" {
-  agent_runtime_name = local.runtime_name
+
+  agent_runtime_name = "geo_agent"
   description        = "AgentCore Runtime do ${var.project_name}"
   role_arn           = awscc_iam_role.agent_runtime_role.arn
 
   agent_runtime_artifact = {
     container_configuration = {
-      container_uri = "${aws_ecr_repository.agent_ecr.repository_url}:latest"
+      container_uri = "${data.aws_ecr_repository.agent_ecr.repository_url}:latest"
     }
   }
 
