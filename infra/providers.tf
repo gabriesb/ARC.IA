@@ -1,4 +1,8 @@
+provider "aws" {
+  region = var.aws_region
+}
+
 provider "awscc" {
-  region = "us-west-1"
+  region = var.aws_region
 }
         
