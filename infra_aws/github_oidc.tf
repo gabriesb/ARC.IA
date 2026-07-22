@@ -43,16 +43,27 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
         Resource = "*"
       },
       {
-        # ECR push/pull
+        # ECR — push/pull (Docker) + leitura pelo Terraform (DescribeRepositories, etc.)
         Effect = "Allow"
         Action = [
+          "ecr:DescribeRepositories",
+          "ecr:ListRepositories",
+          "ecr:GetRepositoryPolicy",
+          "ecr:ListTagsForResource",
+          "ecr:DescribeImages",
           "ecr:BatchCheckLayerAvailability",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:PutImage",
           "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer"
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:TagResource",
+          "ecr:UntagResource",
+          "ecr:PutImageScanningConfiguration",
+          "ecr:PutImageTagMutability"
         ]
         Resource = "*"
       },
@@ -115,6 +126,20 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
           "ec2:DescribeRegions",
           "logs:CreateLogGroup",
           "logs:DescribeLogGroups"
+        ]
+        Resource = "*"
+      },
+      {
+        # CodeBuild — gerenciamento do projeto de build
+        Effect = "Allow"
+        Action = [
+          "codebuild:CreateProject",
+          "codebuild:UpdateProject",
+          "codebuild:DeleteProject",
+          "codebuild:BatchGetProjects",
+          "codebuild:ListProjects",
+          "codebuild:StartBuild",
+          "codebuild:BatchGetBuilds"
         ]
         Resource = "*"
       }
