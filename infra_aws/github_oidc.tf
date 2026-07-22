@@ -66,8 +66,8 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::agent-state",
-          "arn:aws:s3:::agent-state/*"
+          "arn:aws:s3:::agent-runtime-state",
+          "arn:aws:s3:::agent-runtime-state/*"
         ]
       },
       {
