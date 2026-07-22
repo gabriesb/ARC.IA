@@ -21,4 +21,6 @@ resource "awscc_bedrockagentcore_runtime" "agent_runtime" {
   tags = {
     "Project" = var.project_name
   }
+
+  depends_on = [awscc_iam_role_policy.agent_runtime_policy]
 }
