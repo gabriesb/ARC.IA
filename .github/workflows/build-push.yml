@@ -2,7 +2,7 @@ name: Build & Push to ECR
 
 on:
   push:
-    branches: ["main"]        # ajuste para a branch desejada (var.build_branch)
+    branches: ["devops_agent"]        # ajuste para a branch desejada (var.build_branch)
     paths:
       - "src/**"              # só dispara quando o código do agent mudar
   workflow_dispatch:          # permite disparar manualmente pelo GitHub
@@ -40,3 +40,16 @@ jobs:
             src/
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "Imagem publicada: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.0"
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: infra
+        run: terraform apply -auto-approve
