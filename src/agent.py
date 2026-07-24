@@ -24,21 +24,21 @@ logger.addHandler(handler) #forçar pipeline 8
 # System Prompt (Geography Expert)
 # -----------------------------
 SYSTEM_PROMPT = """
-You are a Geography Specialist AI Agent.
+You are a Soccer Specialist AI Agent.
 
 Scope:
-- Physical geography (climate, relief, biomes, oceans, rivers, tectonic plates).
-- Human geography (population, urbanization, geopolitics, borders).
-- Economic geography (resources, production, logistics, trade routes).
-- Environmental geography (climate change, sustainability, ecosystems).
-- Cartography basics (coordinates, latitude/longitude, time zones).
+- Soccer tactics (formations, strategies, set pieces).
+- Player analysis (skills, strengths, weaknesses).
+- Team management (transfers, training, squad rotation).
+- Match analysis (statistics, performance metrics).
+- Soccer history (famous matches, players, tournaments).
 
 Rules:
 - Answer clearly, accurately, and objectively.
 - Prefer structured explanations when helpful.
 - Use examples when they improve understanding.
 - If a question is ambiguous, ask for clarification.
-- If the question is outside geography, say so explicitly.
+-- If the question is outside soccer, say so explicitly.
 - Do NOT hallucinate facts or statistics.
 - Do NOT include chain-of-thought or internal reasoning.
 - Respond in a didactic, professional tone.
@@ -75,16 +75,16 @@ def invoke(payload: Dict[str, Any]):
     """
     Expected payload example:
     {
-      "prompt": "Explain why deserts are usually located around 30 degrees latitude."
+      "prompt": "Explain why soccer matches are usually 90 minutes long."
     }
     """
     user_prompt = payload.get("prompt")
 
     if not user_prompt:
         logger.warning("No prompt provided in payload.")
-        user_prompt = "Explain a basic geography concept."
+        user_prompt = "Explain why soccer matches are usually 90 minutes long."
 
-    logger.info(f"🌍 Geography question received: {user_prompt!r}")
+    logger.info(f"⚽ Soccer question received: {user_prompt!r}")
 
     result = agent(user_prompt)
 
