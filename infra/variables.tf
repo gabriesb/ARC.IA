@@ -10,8 +10,8 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "build_branch" {
-  description = "Branch do GitHub que o CodeBuild vai clonar para buildar a imagem."
+variable "image_tag" {
+  description = "Tag da imagem Docker no ECR (SHA do commit). Passada pelo CI/CD para forcar atualizacao do runtime."
   type        = string
-  default     = "devops_agent"
+  default     = "latest"
 }
