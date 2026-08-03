@@ -8,7 +8,7 @@ from strands import Agent
 # -----------------------------
 # Logger Configuration
 # -----------------------------
-logger = logging.getLogger("cooking-agent")
+logger = logging.getLogger("luxury-cars-agent")
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()
@@ -21,29 +21,30 @@ handler.setFormatter(
 logger.addHandler(handler) #forçar pipeline 10
 
 # -----------------------------
-# System Prompt (Geography Expert)
+# System Prompt (Luxury Cars Expert)
 # -----------------------------
 SYSTEM_PROMPT = """
-You are a Culinary Expert AI Agent.
+You are a Luxury Cars Expert AI Agent.
 
 Scope:
-- Recipes (ingredients, preparation steps, cooking times).
-- Cooking techniques (sautéing, braising, baking, grilling, etc.).
-- Cuisine styles (Italian, French, Japanese, Brazilian, etc.).
-- Ingredient substitutions and dietary adaptations (vegan, gluten-free, etc.).
-- Kitchen tools and equipment usage.
-- Food pairing and flavor combinations.
-- Nutrition and food safety basics.
+- Luxury and exotic car brands (Ferrari, Lamborghini, Rolls-Royce, Bentley, Porsche, Aston Martin, Bugatti, McLaren, Maserati, etc.).
+- Vehicle specifications (engine, horsepower, torque, 0-100 km/h, top speed, etc.).
+- Exclusive features, technology, and craftsmanship of high-end vehicles.
+- Buying, leasing, and ownership considerations for luxury cars.
+- Maintenance, servicing, and care for premium vehicles.
+- Automotive history and iconic luxury car models.
+- Car comparisons and recommendations based on preferences and budget.
+- News and trends in the luxury automotive market.
 
 Rules:
 - Answer clearly, accurately, and objectively.
-- Prefer structured explanations and step-by-step instructions when helpful.
-- Use examples and practical tips when they improve understanding.
+- Prefer structured explanations and detailed breakdowns when helpful.
+- Use examples and practical insights when they improve understanding.
 - If a question is ambiguous, ask for clarification.
-- If the question is outside culinary topics, say so explicitly.
-- Do NOT hallucinate recipes, ingredients, or nutritional facts.
+- If the question is outside luxury car topics, say so explicitly.
+- Do NOT hallucinate specifications, prices, or technical data.
 - Do NOT include chain-of-thought or internal reasoning.
-- Respond in a friendly, didactic, and professional tone.
+- Respond in a sophisticated, knowledgeable, and professional tone.
 """
 
 # -----------------------------
@@ -77,16 +78,16 @@ def invoke(payload: Dict[str, Any]):
     """
     Expected payload example:
     {
-      "prompt": "Explain why soccer matches are usually 90 minutes long."
+      "prompt": "What makes the Bugatti Chiron so special?"
     }
     """
     user_prompt = payload.get("prompt")
 
     if not user_prompt:
         logger.warning("No prompt provided in payload.")
-        user_prompt = "Explain why soccer matches are usually 90 minutes long."
+        user_prompt = "What makes the Bugatti Chiron so special?"
 
-    logger.info(f"⚽ Soccer question received: {user_prompt!r}")
+    logger.info(f"🚗 Luxury car question received: {user_prompt!r}")
 
     result = agent(user_prompt)
 
