@@ -38,3 +38,4 @@ crash.*.log
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
+UPDATE.MD
