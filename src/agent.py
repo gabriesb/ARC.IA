@@ -89,7 +89,7 @@ def invoke(payload: Dict[str, Any]):
       "prompt": "What is the latitude and longitude of the Amazon rainforest?"
     }
     """
-    user_prompt = payload.get("prompt")
+    user_prompt = payload.get("prompt") #testando
 
     if not user_prompt:
         logger.warning("No prompt provided in payload.")

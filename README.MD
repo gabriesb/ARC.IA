@@ -25,7 +25,7 @@ O agente atual é especializado em **dados geográficos** (GIS, coordenadas, pro
 
 ```mermaid
 flowchart LR
-    Dev[Push na branch devops_agent] --> GHA[GitHub Actions]
+    Dev[PR devops_agent -> main\naprovado e mergeado] --> GHA[GitHub Actions]
     GHA -- OIDC --> AWS[(AWS IAM Role)]
     GHA --> Build[Build imagem Docker ARM64]
     Build --> ECR[(Amazon ECR)]
@@ -33,6 +33,7 @@ flowchart LR
     TF --> Runtime[AgentCore Runtime]
     Runtime -- pull image --> ECR
     Runtime --> Bedrock[(Amazon Bedrock - Nova Pro)]
+    Manual[Disparo manual\naction=destroy] --> GHA
 ```
 
 - **`infra_aws/`**: infraestrutura de *bootstrap* — repositório ECR, bucket S3 para state remoto do Terraform e a IAM Role usada pelo GitHub Actions via OIDC.
@@ -127,15 +128,23 @@ Copie o valor do output `github_actions_role_arn` e cadastre-o como **Repository
 Settings → Secrets and variables → Actions → Variables → AWS_ROLE_ARN
 ```
 
-### 2. Pipeline (GitHub Actions) — automático a cada push em `devops_agent`
+### 2. Pipeline (GitHub Actions) — automático quando um PR `devops_agent → main` é aprovado e mergeado
 
-O workflow [build-push.yml](.github/workflows/build-push.yml) é disparado por push na branch `devops_agent` (quando arquivos em `src/**` mudam) ou manualmente (`workflow_dispatch`). Ele:
+O workflow [build-push.yml](.github/workflows/build-push.yml) é disparado quando um **Pull Request da branch `devops_agent` para `main`** é fechado com merge (evento `pull_request` / `types: closed`, checando `merged == true`), desde que arquivos em `src/**` tenham mudado. Para que isso represente de fato um PR **aprovado**, configure uma *branch protection rule* na branch `main` exigindo pelo menos 1 aprovação de review antes do merge:
+
+```
+Settings → Branches → Branch protection rules → main → Require a pull request before merging → Require approvals
+```
+
+Job `build-push`, executado nesse cenário (ou via `workflow_dispatch` com `action=apply`):
 
 1. Autentica na AWS via OIDC (assume `AWS_ROLE_ARN`).
 2. Faz login no ECR.
 3. Builda a imagem Docker para `linux/arm64` (com QEMU + Buildx).
 4. Publica a imagem no ECR com as tags `<commit-sha>` e `latest`.
 5. Executa `terraform init` + `terraform apply` no diretório `infra/`, passando `image_tag=<commit-sha>` para atualizar o AgentCore Runtime com a nova imagem.
+
+O workflow também pode ser disparado manualmente (`workflow_dispatch`), escolhendo a ação `apply` (mesmo fluxo acima) ou `destroy` (ver seção [Destruindo a Infraestrutura](#destruindo-a-infraestrutura)).
 
 ### 3. Execução manual do `infra/` (alternativa ao pipeline)
 
@@ -176,7 +185,25 @@ terraform apply -var="image_tag=<tag-da-imagem>"
 
 ## Destruindo a Infraestrutura
 
-A ordem de destruição é **inversa** à de criação (`infra` → `infra_aws`), pois o runtime depende dos recursos de bootstrap (ECR, state):
+A ordem de destruição é **inversa** à de criação (`infra` → `infra_aws`), pois o runtime depende dos recursos de bootstrap (ECR, state).
+
+### Via pipeline (recomendado — mantém tudo gerenciado pelo GitHub Actions)
+
+O runtime (`infra/`) pode ser destruído diretamente pelo workflow [build-push.yml](.github/workflows/build-push.yml):
+
+```
+Actions → Build, Push & Terraform (infra/) → Run workflow → action: destroy
+```
+
+Isso executa `terraform destroy` no diretório `infra/` usando as mesmas credenciais OIDC do pipeline. Por segurança, o job `destroy` referencia o Environment `destroy-approval` — configure-o em `Settings → Environments` com *required reviewers* para exigir uma aprovação manual antes da execução:
+
+```
+Settings → Environments → New environment → destroy-approval → Required reviewers
+```
+
+> O bootstrap (`infra_aws/`) continua sendo destruído manualmente (ver abaixo), pois ele contém o próprio ECR e o bucket de state usados pelo pipeline.
+
+### Manual
 
 ```bash
 # 1. Destruir o runtime primeiro
