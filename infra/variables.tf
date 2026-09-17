@@ -1,7 +1,7 @@
-variable project_name{
+variable "project_name" {
   description = "Nome do projeto, usado como prefixo para nomes de recursos."
-  type = string
-  default = "agentcore_easy_deploy"
+  type        = string
+  default     = "agentcore_easy_deploy"
 }
 
 variable "aws_region" {

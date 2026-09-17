@@ -15,7 +15,9 @@ resource "awscc_bedrockagentcore_runtime" "agent_runtime" {
   }
 
   environment_variables = {
-    "LOG_LEVEL" = "INFO"
+    "LOG_LEVEL"               = "INFO"
+    "GITHUB_TOKEN_SECRET_ARN" = data.aws_secretsmanager_secret.github_token.arn
+    "DIAGRAM_BUCKET_NAME"     = data.aws_s3_bucket.diagrams.bucket
   }
 
   tags = {
