@@ -170,9 +170,9 @@ def generate_diagram_from_terraform(terraform_code: str, title: str = "Architect
     return json.dumps(result)
 
 
-# -----------------------------
+# ------------------------------
 # Agent (LLM only orchestrates tool calls / chats; never draws diagrams)
-# -----------------------------
+# ------------------------------
 agent = Agent(
     model=bedrock_model,
     system_prompt=SYSTEM_PROMPT,
