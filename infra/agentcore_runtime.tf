@@ -1,6 +1,6 @@
 resource "awscc_bedrockagentcore_runtime" "agent_runtime" {
 
-  agent_runtime_name = "agent_runtime"
+  agent_runtime_name = "arkia_agent"
   description        = "AgentCore Runtime do ${var.project_name}"
   role_arn           = awscc_iam_role.agent_runtime_role.arn
 

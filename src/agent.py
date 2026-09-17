@@ -14,7 +14,7 @@ from diagram_service import (
 )
 
 # -----------------------------
-# Logger Configuration
+# Logger Configuration t
 # -----------------------------
 logger = logging.getLogger("geographic-data-agent")
 logger.setLevel(logging.INFO)
