@@ -1,11 +1,14 @@
 import json
 import logging
+import os
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from bedrock_agentcore import BedrockAgentCoreApp
+from mcp.client.streamable_http import streamablehttp_client
 from strands import Agent, tool
 from strands.models import BedrockModel
+from strands.tools.mcp import MCPClient
 
 from diagram_service import (
     DiagramServiceError,
@@ -36,9 +39,10 @@ You are an AWS Architecture Diagram Agent.
 
 Your job is to produce AWS architecture diagrams for a GitHub repository (or
 for a Terraform snippet pasted by the user), using the `generate_diagram_from_github`
-and `generate_diagram_from_terraform` tools.
+and `generate_diagram_from_terraform` tools, and to give AWS best-practice
+improvement suggestions grounded in official AWS documentation.
 
-CRITICAL RULE — the diagram is NEVER drawn by you (the language model):
+CRITICAL RULE #1 — the diagram is NEVER drawn by you (the language model):
 - The tools deterministically parse the real Terraform (.tf) source code and
   render the diagram as a draw.io (.drawio) XML file using the official AWS
   icon set. You must never invent, guess or hallucinate AWS resources,
@@ -53,16 +57,48 @@ CRITICAL RULE — the diagram is NEVER drawn by you (the language model):
   "owner/repo" (and optionally a branch/tag/commit) or for the Terraform
   code to analyze. Do not proceed with assumptions.
 
+CRITICAL RULE #2 — best-practice claims are NEVER made from memory alone:
+- You have access to the official AWS documentation (including Well-Architected
+  guidance) through MCP tools that search and read docs.aws.amazon.com.
+- Whenever the user asks whether a service, feature or configuration choice
+  is recommended, is a good/bad practice, or asks for improvement
+  suggestions, you MUST call the documentation search/read tools first to
+  verify the claim before answering, and you MUST cite the documentation
+  URL(s) you used for every recommendation.
+- If the documentation tools are unavailable or you cannot find a clear
+  answer, say so honestly instead of guessing — never present an unverified
+  opinion as an official AWS recommendation.
+
 Scope:
 - AWS architecture diagrams generated from Terraform Infrastructure-as-Code.
 - Explaining what a diagram/tool result contains (resources, categories,
   relationships) based strictly on the tool output.
+- AWS best-practice / Well-Architected recommendations, grounded in official
+  documentation retrieved via the MCP documentation tools.
 - General questions about how this diagram-generation pipeline works.
 
 Rules:
 - Do NOT include chain-of-thought or internal reasoning in your replies.
 - Respond in a clear, professional and concise tone.
 """
+
+# -----------------------------
+# AWS Knowledge MCP Server (official AWS docs, incl. Well-Architected guidance)
+# -----------------------------
+# Public, unauthenticated, read-only MCP server maintained by AWS
+# (https://github.com/awslabs/mcp/tree/main/src/aws-knowledge-mcp-server).
+# Exposes tools such as `search_documentation` and `read_documentation` so the
+# agent can ground best-practice answers in real docs.aws.amazon.com content
+# instead of relying on the model's memory. `continue_on_error=True` means a
+# network hiccup here only removes these tools for that turn — it never
+# breaks diagram generation, which does not depend on them.
+AWS_KNOWLEDGE_MCP_URL = os.environ.get("AWS_KNOWLEDGE_MCP_URL", "https://knowledge-mcp.global.api.aws")
+
+aws_knowledge_mcp_client = MCPClient(
+    lambda: streamablehttp_client(AWS_KNOWLEDGE_MCP_URL),
+    continue_on_error=True,
+    application_name="agentcore-easy-deploy",
+)
 
 # -----------------------------
 # AgentCore App
@@ -140,8 +176,43 @@ def generate_diagram_from_terraform(terraform_code: str, title: str = "Architect
 agent = Agent(
     model=bedrock_model,
     system_prompt=SYSTEM_PROMPT,
-    tools=[generate_diagram_from_github, generate_diagram_from_terraform],
+    tools=[generate_diagram_from_github, generate_diagram_from_terraform, aws_knowledge_mcp_client],
 )
+
+
+_ADVICE_RE = re.compile(
+    r"melhor(ia|es\s+pr[aá]ticas)|boas\s+pr[aá]ticas|recomend|sugest[aã]o|"
+    r"best[\s-]practice|good\s+practice|recommend|suggestion|should\s+i|is\s+this\s+(a\s+)?good",
+    re.IGNORECASE,
+)
+
+
+def _wants_best_practice_review(text: str) -> bool:
+    """Deterministic (regex) detection of advisory intent in the user's prompt.
+    Does not decide *what* the answer is — only whether the LLM+MCP review
+    step should run in addition to the deterministic diagram generation."""
+    return bool(text) and bool(_ADVICE_RE.search(text))
+
+
+def _review_best_practices(resources: List[Dict[str, Any]], user_question: str) -> str:
+    """Asks the LLM to review the parsed resource types against official AWS
+    documentation (via the AWS Knowledge MCP tools) and return grounded
+    recommendations. This is the only place an LLM opinion is returned to the
+    user — it never affects the diagram itself, which was already generated
+    deterministically by `analyze_github_repository`/`analyze_terraform_source`."""
+    resource_types = sorted({r["type"] for r in resources})
+    listing = "\n".join(f"- {t}" for t in resource_types)
+    prompt = (
+        "Using the search_documentation and read_documentation tools (official AWS docs), "
+        "review the following AWS resource types found in this project and answer the "
+        "user's question below. Cite the documentation URL(s) you used for every "
+        "recommendation. If a resource type has no specific best-practice concern, say so "
+        "briefly instead of inventing one.\n\n"
+        f"Resource types found in this project:\n{listing}\n\n"
+        f"User's question: {user_question or 'Are there any AWS best-practice improvements to suggest?'}"
+    )
+    result = agent(prompt)
+    return str(result.message)
 
 
 # -----------------------------
@@ -209,6 +280,8 @@ def invoke(payload: Dict[str, Any]):
         except DiagramServiceError as exc:
             logger.warning("Diagram generation failed for %s/%s: %s", owner, repo, exc)
             return {"error": str(exc)}
+        if _wants_best_practice_review(user_prompt):
+            diagram["recommendations"] = _review_best_practices(diagram["resources"], user_prompt)
         return _diagram_response(diagram)
 
     if terraform_code:
@@ -218,6 +291,8 @@ def invoke(payload: Dict[str, Any]):
         except DiagramServiceError as exc:
             logger.warning("Diagram generation failed for inline Terraform: %s", exc)
             return {"error": str(exc)}
+        if _wants_best_practice_review(user_prompt):
+            diagram["recommendations"] = _review_best_practices(diagram["resources"], user_prompt)
         return _diagram_response(diagram)
 
     # No repo/Terraform detected: let the conversational agent (with the same
@@ -246,7 +321,7 @@ def _diagram_response(diagram: Dict[str, Any]) -> Dict[str, Any]:
         f"({diagram.get('ref') or 'inline'}): found {diagram['resource_count']} AWS resource(s) "
         f"across {len(diagram['files_scanned'])} Terraform file(s).\n\n{resource_lines}"
     )
-    return {
+    response = {
         "result": summary,
         "diagram": {
             "format": "drawio",
@@ -255,6 +330,9 @@ def _diagram_response(diagram: Dict[str, Any]) -> Dict[str, Any]:
         },
         "resources": diagram["resources"],
     }
+    if diagram.get("recommendations"):
+        response["recommendations"] = diagram["recommendations"]
+    return response
 
 
 if __name__ == "__main__":
