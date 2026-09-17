@@ -1,5 +1,6 @@
 bedrock-agentcore
 strands-agents
+mcp
 boto3
 requests
 
