@@ -82,6 +82,22 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
         ]
       },
       {
+        # S3 — leitura do bucket de diagramas via `data "aws_s3_bucket"` no infra/
+        # (o runtime/agent também usa GetObject/PutObject, concedidos na sua própria role)
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketLocation",
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.diagrams.arn
+      },
+      {
+        # Secrets Manager — leitura do secret do GitHub token via `data "aws_secretsmanager_secret"` no infra/
+        Effect   = "Allow"
+        Action   = "secretsmanager:DescribeSecret"
+        Resource = aws_secretsmanager_secret.github_token.arn
+      },
+      {
         # IAM — criação/atualização de roles e policies pelo Terraform
         Effect = "Allow"
         Action = [
