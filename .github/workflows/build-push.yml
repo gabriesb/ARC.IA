@@ -26,9 +26,9 @@ permissions:
 
 jobs:
   build-push:
-    # Roda em: PR de devops_agent mergeado em main, ou disparo manual com action=apply
+    # Roda em: PR de devops_agent ou arkia mergeado em main, ou disparo manual com action=apply
     if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'devops_agent') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && contains(fromJSON('["devops_agent", "arkia"]'), github.event.pull_request.head.ref)) ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
     runs-on: ubuntu-latest
     env:
