@@ -42,6 +42,7 @@ CATEGORY_COLORS = {
 # them), but the diagram builder filters them out before layout.
 NON_VISUAL_RESOURCE_TYPES = {
     "aws_iam_role_policy",
+    "awscc_iam_role_policy",
     "aws_iam_role_policy_attachment",
     "aws_iam_policy_attachment",
     "aws_iam_user_policy_attachment",
@@ -129,6 +130,7 @@ RESOURCE_ICON_MAP: dict[str, IconSpec] = {
     "aws_secretsmanager_secret": IconSpec("secrets_manager", "Security", "Secrets Manager Secret"),
     "aws_kms_key": IconSpec("key_management_service", "Security", "KMS Key"),
     "aws_iam_role": IconSpec("identity_and_access_management", "Security", "IAM Role"),
+    "awscc_iam_role": IconSpec("identity_and_access_management", "Security", "IAM Role"),
     "aws_iam_user": IconSpec("identity_and_access_management", "Security", "IAM User"),
     "aws_iam_policy": IconSpec("identity_and_access_management", "Security", "IAM Policy"),
     "aws_cognito_user_pool": IconSpec("cognito", "Security", "Cognito User Pool"),

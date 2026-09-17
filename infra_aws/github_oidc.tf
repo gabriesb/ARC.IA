@@ -93,8 +93,12 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
       },
       {
         # Secrets Manager — leitura do secret do GitHub token via `data "aws_secretsmanager_secret"` no infra/
-        Effect   = "Allow"
-        Action   = "secretsmanager:DescribeSecret"
+        # (GetResourcePolicy é chamado internamente pelo provider ao ler o data source)
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetResourcePolicy"
+        ]
         Resource = aws_secretsmanager_secret.github_token.arn
       },
       {
