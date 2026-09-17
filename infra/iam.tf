@@ -61,6 +61,21 @@ resource "awscc_iam_role_policy" "agent_runtime_policy" {
           "ecr:GetDownloadUrlForLayer"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = data.aws_secretsmanager_secret.github_token.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject"
+        ]
+        Resource = "${data.aws_s3_bucket.diagrams.arn}/*"
       }
     ]
   })

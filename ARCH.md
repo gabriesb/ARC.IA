@@ -17,6 +17,8 @@ flowchart TB
             Role["IAM Role\ngithub-actions-ecr"]
             ECR["Amazon ECR\nagent_ecr"]
             S3State["S3 Bucket\nagent-runtime-state\n(Terraform state)"]
+            S3Diagrams["S3 Bucket\nagent-diagrams-*\n(diagramas .drawio)"]
+            GitHubSecret["Secrets Manager\nagentcore-easy-deploy/github-token"]
         end
 
         subgraph Runtime["infra/ (runtime)"]
@@ -40,6 +42,8 @@ flowchart TB
     AgentRuntime -->|assume| RuntimeRole
     RuntimeRole -->|bedrock:InvokeModel| Bedrock
     RuntimeRole -->|logs:PutLogEvents| CloudWatch
+    RuntimeRole -->|secretsmanager:GetSecretValue| GitHubSecret
+    RuntimeRole -->|s3:PutObject/GetObject| S3Diagrams
     Role -->|s3:GetObject/PutObject| S3State
 
     Client -->|HTTPS invoke| AgentRuntime
@@ -103,7 +107,7 @@ sequenceDiagram
 
 | Camada | Diretório | Responsabilidade |
 |---|---|---|
-| Bootstrap | [infra_aws/](infra_aws) | Cria pré-requisitos que só existem uma vez: ECR, bucket de state, IAM Role + OIDC do GitHub Actions |
+| Bootstrap | [infra_aws/](infra_aws) | Cria pré-requisitos que só existem uma vez: ECR, bucket de state, IAM Role + OIDC do GitHub Actions, bucket S3 de diagramas e o secret do GitHub token (o `infra/` apenas referencia esses recursos via `data` sources) |
 | Runtime (IaC) | [infra/](infra) | Provisiona o `AgentCore Runtime` e a IAM Role que ele assume para chamar o Bedrock e puxar imagem do ECR |
 | Aplicação | [src/](src) | Código do agente (Strands + BedrockAgentCore), `Dockerfile` e dependências |
 | CI/CD | [.github/workflows/](.github/workflows) | Builda a imagem, publica no ECR e aplica o Terraform do runtime quando um PR `devops_agent → main` é aprovado/mergeado; também permite `apply`/`destroy` manuais via `workflow_dispatch` |

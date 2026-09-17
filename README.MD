@@ -36,7 +36,7 @@ flowchart LR
     Manual[Disparo manual\naction=destroy] --> GHA
 ```
 
-- **`infra_aws/`**: infraestrutura de *bootstrap* — repositório ECR, bucket S3 para state remoto do Terraform e a IAM Role usada pelo GitHub Actions via OIDC.
+- **`infra_aws/`**: infraestrutura de *bootstrap* — repositório ECR, bucket S3 para state remoto do Terraform, bucket S3 para os diagramas `.drawio` gerados pelo agente, secret no Secrets Manager para o GitHub token e a IAM Role usada pelo GitHub Actions via OIDC.
 - **`infra/`**: infraestrutura do *runtime* — recurso `awscc_bedrockagentcore_runtime`, IAM Role/Policy assumida pelo runtime para invocar o Bedrock e puxar a imagem do ECR.
 - **`src/`**: código-fonte do agente (Python) e `Dockerfile` usado para gerar a imagem publicada no ECR.
 - **`.github/workflows/`**: pipeline que builda a imagem, publica no ECR e aplica o Terraform do runtime.
@@ -119,6 +119,8 @@ terraform apply
 
 Isso cria:
 - Bucket S3 (`agent-runtime-state`) para armazenar o state remoto do Terraform do runtime.
+- Bucket S3 (`agent-diagrams-<account-id>`) onde o agente salva os diagramas `.drawio` gerados.
+- Secret no Secrets Manager (`agentcore-easy-deploy/github-token`) — populado manualmente com um GitHub PAT (`aws secretsmanager put-secret-value`) para o agente ler repositórios.
 - Repositório ECR (`agent_ecr`) onde a imagem do agente será publicada.
 - IAM Role assumida pelo GitHub Actions via OIDC, com permissões para ECR, S3 (state), IAM (para o Terraform do runtime), Bedrock/AgentCore e CloudControl (usado pelo provider `awscc`).
 
@@ -175,6 +177,8 @@ terraform apply -var="image_tag=<tag-da-imagem>"
 | Output | Descrição |
 |---|---|
 | `github_actions_role_arn` | ARN da role a ser usada como `AWS_ROLE_ARN` no GitHub |
+| `diagram_bucket_name` | Nome do bucket S3 onde os diagramas `.drawio` gerados pelo agente são salvos |
+| `github_token_secret_arn` | ARN do secret no Secrets Manager a ser populado com o GitHub PAT |
 
 **`infra/variables.tf`**
 | Variável | Default | Descrição |
