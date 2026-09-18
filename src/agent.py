@@ -171,7 +171,7 @@ def generate_diagram_from_terraform(terraform_code: str, title: str = "Architect
 
 
 # ------------------------------
-# Agent (LLM only orchestrates tool calls / chats; never draws diagrams)
+# Agent (LLM only orchestrates tool calls / chats; never draws diagrams.)
 # ------------------------------
 agent = Agent(
     model=bedrock_model,
