@@ -21,7 +21,7 @@ resource "aws_iam_role" "github_actions_ecr_role" {
         }
         StringLike = {
           # Permite qualquer branch/ref do repositório
-          "token.actions.githubusercontent.com:sub" = "repo:gabriesb/AgentCore-Easy-Deploy:*"
+          "token.actions.githubusercontent.com:sub" = "repo:gabriesb/ARC.IA:*"
         }
       }
     }]
