@@ -179,18 +179,18 @@ sequenceDiagram
 - Autenticação da pipeline via **OIDC** (sem chaves de acesso estáticas no GitHub).
 - O GitHub PAT usado para ler repositórios fica apenas no Secrets Manager (`GITHUB_TOKEN_SECRET_ARN`), nunca no código, no state do Terraform ou nos logs.
 - O AWS Knowledge MCP Server é público e não exige autenticação — está sujeito a rate limiting por parte da AWS; uma falha de conexão é tolerada (`continue_on_error=True`) e apenas remove as ferramentas de documentação daquela chamada, sem quebrar a geração de diagrama.
-- State do Terraform armazenado remotamente em S3 ([infra/versions.tf](infra/versions.tf)), sem lock (DynamoDB) — ver [UPDATE.MD](UPDATE.MD) para melhorias recomendadas.
+- State do Terraform armazenado remotamente em S3 ([infra/versions.tf](infra/versions.tf)), sem lock (DynamoDB).
 
 ## Ordem de Provisionamento e Destruição
 
 ```mermaid
 flowchart LR
-    subgraph Criação
+    subgraph Criacao["Criação"]
         A["1. infra_aws\n(bootstrap)"] --> B["2. Pipeline GitHub Actions\n(build + push + infra apply)"]
     end
-    subgraph Destruição
+    subgraph Destruicao["Destruição"]
         C["1. infra\n(destroy runtime\nvia pipeline, action=destroy)"] --> D["2. infra_aws\n(destroy bootstrap,\nmanual)"]
     end
 ```
 
-Para detalhes de deploy passo a passo, consulte o [README.MD](README.MD). Para melhorias e débitos técnicos planejados, consulte o [UPDATE.MD](UPDATE.MD).
+Para detalhes de deploy passo a passo, consulte o [README.MD](README.MD).

@@ -10,6 +10,7 @@
 ## Sumário
 
 - [Visão Geral](#visão-geral)
+- [Stack Utilizada](#stack-utilizada)
 - [Arquitetura](#arquitetura)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Pré-requisitos](#pré-requisitos)
@@ -29,6 +30,23 @@ O ARC.IA combina duas fontes de verdade, nunca o modelo sozinho:
 
 - **Terraform real do repositório analisado** (via GitHub API) → parseado deterministicamente → renderizado como diagrama `.drawio` com ícones oficiais da AWS.
 - **Documentação oficial da AWS** (incluindo Well-Architected) → consultada via o [AWS Knowledge MCP Server](https://github.com/awslabs/mcp/tree/main/src/aws-knowledge-mcp-server) → usada para fundamentar toda recomendação, sempre citando a URL da fonte.
+
+## Stack Utilizada
+
+| Categoria | Tecnologia |
+|---|---|
+| Linguagem | Python 3.11 |
+| Framework do agente | [Strands Agents](https://github.com/strands-agents/sdk-python) (`strands-agents`) |
+| Runtime do agente | Amazon Bedrock AgentCore (`bedrock-agentcore`, recurso `awscc_bedrockagentcore_runtime`) |
+| Modelo de LLM | Amazon Bedrock — Nova Pro (`apac.amazon.nova-pro-v1:0`) |
+| Protocolo de ferramentas | Model Context Protocol (`mcp`) — consumo do AWS Knowledge MCP Server via streamable HTTP |
+| SDK AWS | `boto3` |
+| HTTP client | `requests` (API REST do GitHub) |
+| Containerização | Docker (imagem `python:3.11-slim`, build multi-arch `linux/arm64` via Buildx + QEMU) |
+| Infraestrutura como código | Terraform `~> 1.0` (providers `aws` e `awscc`) |
+| Serviços AWS | Bedrock AgentCore Runtime, ECR, S3, Secrets Manager, IAM (OIDC), CloudWatch Logs, CloudFormation/CloudControl (`awscc`) |
+| CI/CD | GitHub Actions (`aws-actions/configure-aws-credentials`, Docker Buildx/QEMU), autenticação via OIDC |
+| Geração de diagramas | Parser determinístico de Terraform (parsing próprio) + exportação em formato `.drawio` com ícones oficiais AWS4 |
 
 ## Arquitetura
 
@@ -60,7 +78,6 @@ Para diagramas detalhados (componentes, fluxo de geração de diagrama e fluxo d
 ARC.IA/
 ├── README.MD                     # este arquivo
 ├── ARCH.md                       # arquitetura detalhada (diagramas Mermaid)
-├── UPDATE.MD                     # melhorias e débitos técnicos identificados
 ├── .github/
 │   └── workflows/
 │       └── build-push.yml        # pipeline de build, push e apply
@@ -279,4 +296,4 @@ terraform destroy
 - **Pipeline não disparou após o merge do PR**: o `build-push.yml` só roda para PRs cuja branch de origem (`head.ref`) seja `devops_agent` ou `arkia` e cujo destino seja `main`, com mudanças em `src/**`. Um PR de outra branch é ignorado (job aparece como *skipped*).
 - **Falha no `terraform apply` do runtime**: confirme que o `infra_aws` já foi aplicado (ECR, bucket de state, bucket de diagramas e secret do GitHub token precisam existir antes) e que o modelo Bedrock está habilitado na região configurada.
 
-Para melhorias planejadas e débitos técnicos conhecidos, veja [UPDATE.MD](UPDATE.MD). Para diagramas de arquitetura detalhados, veja [ARCH.md](ARCH.md).
+Para diagramas de arquitetura detalhados, veja [ARCH.md](ARCH.md).
