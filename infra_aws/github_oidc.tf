@@ -20,8 +20,9 @@ resource "aws_iam_role" "github_actions_ecr_role" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
         StringLike = {
-          # Permite qualquer branch/ref do repositório
-          "token.actions.githubusercontent.com:sub" = "repo:gabriesb/ARC.IA:*"
+          # Repositório usa o novo formato imutável de subject claims do GitHub OIDC
+          # (repo:OWNER@OWNER_ID/REPO@REPO_ID:*). Permite qualquer branch/ref/evento.
+          "token.actions.githubusercontent.com:sub" = "repo:gabriesb@158730320/ARC.IA@1117559152:*"
         }
       }
     }]
@@ -160,6 +161,13 @@ resource "aws_iam_role_policy" "github_actions_ecr_policy" {
           "codebuild:ListProjects",
           "codebuild:StartBuild",
           "codebuild:BatchGetBuilds"
+        ]
+        Resource = "*"
+      },
+      { 
+        Effect = "Allow"
+        Action = [
+          "sts:AssumeRoleWithWebIdentity"
         ]
         Resource = "*"
       }
